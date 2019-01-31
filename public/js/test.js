@@ -99,7 +99,7 @@ GLTFLoader.load('bundle.glb',(data)=>{
         let model = Assets.models.entries().next().value[1]; // Assets.models.get('')
         if (Object.keys(model.animations).length!==0){
             let mixer = new THREE.AnimationMixer( model.mesh )
-            let currentAction = mixer.clipAction( Object.keys(model.animations)[0] )
+            let currentAction = mixer.clipAction( model.animations[Object.keys(model.animations)[0]] )
             currentAction.play()
             RENDER.mixers.push(mixer)
         }
