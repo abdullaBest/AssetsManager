@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Assets Manager</title>
+		<meta charset="utf-8">
+		<link rel="shortcut icon" href="i/favicon.ico" type="image/x-icon">
+		
+		<script src="js/lib/three.min.js?ver=0.001"></script>
+		<script src="js/lib/DRACOLoader.js"></script>
+		<script src="js/lib/GLTFLoader.js"></script>
+
+		<script src="js/lib/GLTFExporter.js"></script>
+		
+		<script src="js/lib/OrbitControls.js"></script>
+	
+		<script defer src="js/strapony.js?ver=0.001"></script>
+		<script defer src="js/render.js?ver=0.001"></script>
+		<script defer src="js/main.js?ver=0.001"></script>
+	</head>
+    <body style="padding:0;margin:0;overflow:hidden;font-family:Arial;">
+		<canvas id="CANVAS" width="800" height="600"></canvas>
+		
+        <div id="LIST" component="window" title="список" left="0" top="0" width="200" height="400">
+			<button id=".filter_active">active</button>
+			<button id=".filter_all">all</button>
+			<div id=".models" component="models_list">
+			</div>
+		</div>
+		
+		<div id="MODEL_INFO" component="window" title="информация" left="0" top="400" width="350" height="200">
+				<div>
+					название:
+					<input id=".name" type="text" style="width:150px">
+					<button id=".change_name" style="display:none">изменить</button>
+				</div>
+				<div id=".position" style="display:none">
+					положение:
+					<input id=".x" type="text" style="width:50px">
+					<input id=".y" type="text" style="width:50px">
+					<input id=".z" type="text" style="width:50px">
+				</div>	
+				<div id=".scale" style="display:none">
+					маштаб:
+					<input id=".x" type="text" style="width:50px">
+					<input id=".y" type="text" style="width:50px">
+					<input id=".z" type="text" style="width:50px">
+				</div>	
+				<div>
+					активен:
+					<input id=".active" type="checkbox">
+				</div>
+				<div>
+					использовать анимацию в другой моделе:
+					<select id=".concat_animation_with_model">
+					</select>
+					<input id=".concat_animation_name" type="text">
+				</div>
+				<div>
+					анимация:
+					<select id=".animation_list">
+					</select>
+					<button id=".play">
+						проиграть
+					</button>
+					<button id=".stop">
+						стоп
+					</button>
+				</div>
+				<button id=".save">сохранить</button>					
+		</div>
+
+		<div id="SCENE" component="window" title="сцена" left="0" top="600" width="350" height="150">
+			<div id=".tree" style="overflow:auto;height:calc(100% - 20px)">
+			</div>
+		</div>
+		
+		<div id="OBJECT" component="window" title="объект" left="351" top="600" width="350" height="200">
+			<table>
+				<tr>
+					<td>материал:</td>
+					<td>
+						<select id=".material">
+							<option value="MeshBasicMaterial">Basic</option>
+							<option value="MeshLambertMaterial">Lambert</option>
+							<option value="MeshPhongMaterial">Phong</option>
+							<option value="MeshPhysicalMaterial">Physical</option>
+							<option value="MeshStandardMaterial">Standard</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>дефуз:</td>
+					<td>
+						<select id=".defuse">
+							<option value=''></option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						нормали:
+					</td>
+					<td>
+						<select id=".normals">
+							<option value=''></option>
+						</select>
+					</td>	
+				</tr>
+				<tr>
+					<td>
+						rmo:
+					</td>
+					<td>
+						<select id=".rmo">
+							<option value=''></option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						metalness:
+					</td>
+					<td>
+						<input id=".metalness" type="text" value="0">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						roughness:
+					</td>
+					<td>
+						<input id=".roughness" type="text" value="0">
+					</td>
+				</tr>
+			</table>
+			<button id=".apply">применить</button>
+		</div>
+
+		<div id="MAIN" component="window" title="главное" left="201" top="0" width="200" height="50">
+			<button id=".create_bundle">создать пакет</button>
+		</div>
+
+	</body>
+</html>
