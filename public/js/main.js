@@ -351,45 +351,28 @@ const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned)=>{
     let _normals = normals!==''?textures.get(normals).txt:null
     let _rmo = rmo!==''?textures.get(rmo).txt:null
 
-    let material
-    switch (type) {
-        case 'MeshBasicMaterial':
-            material = new THREE.MeshBasicMaterial({
-                map: _defuse
-            })
-            break
-        case 'MeshLambertMaterial':
-            material = new THREE.MeshLambertMaterial({
-                map: _defuse
-            })
-            break
-        case 'MeshPhongMaterial':
-            material = new THREE.MeshPhongMaterial({
-                map: _defuse
-            })
-            break
-        case 'MeshPhysicalMaterial':
-            material = new THREE.MeshPhysicalMaterial({
-                map: _defuse
-            })
-            break
-        case 'MeshStandardMaterial':
-            material = new THREE.MeshStandardMaterial({
-            	//side          : THREE.DoubleSide,
-                map           : _defuse,
-                normalMap     : _normals,
-                metalnessMap  : _rmo,
-                roughnessMap  : _rmo,
-                aoMap         : _rmo,
-                skinning      : skinned,
-                metalness     : metalness,
-                roughness     : roughness
-            })
-            break
-    }
+/*
+    'MeshBasicMaterial'
+    'MeshLambertMaterial'
+    'MeshPhongMaterial'
+    'MeshPhysicalMaterial'
+    'MeshStandardMaterial'
+*/
+    let material = new THREE[type]({
+       	//side          : THREE.DoubleSide,
+        map           : _defuse,
+        normalMap     : _normals,
+        metalnessMap  : _rmo,
+        roughnessMap  : _rmo,
+        aoMap         : _rmo,
+        skinning      : skinned,
+        metalness     : metalness,
+        roughness     : roughness
+    })
 
     return material
 }
+
 $.OBJECT.apply.el.onclick=()=>{
     if (!selected_object || !selected_object.material){
         return
