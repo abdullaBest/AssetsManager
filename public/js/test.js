@@ -65,7 +65,8 @@ const Assets = Object.seal({
                         aoMap         : o.rmo?this.textures.get(o.rmo):null,
                         skinning      : node.type==='SkinnedMesh',
                         metalness     : o.metalness,
-                        roughness     : o.roughness
+                        roughness     : o.roughness,
+                        transparent   : o.transparent,
                     })
                 }
             })

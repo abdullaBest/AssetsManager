@@ -114,7 +114,8 @@ const apply_materials = (model)=>{
                     info.rmo,
                     parseFloat(info.metalness),
                     parseFloat(info.roughness),
-                    node.type==='SkinnedMesh'?true:false
+                    node.type==='SkinnedMesh'?true:false,
+                    info.transparent,
                 )
             }
             node.material = info.material
@@ -227,6 +228,7 @@ const select_mesh = (e)=>{
         $.OBJECT.rmo.el.value = selected_object.material.metalnessMap?selected_object.material.metalnessMap.name:''
         $.OBJECT.metalness.el.value = selected_object.material.metalness
         $.OBJECT.roughness.el.value = selected_object.material.roughness
+        $.OBJECT.transparent.el.checked = selected_object.material.transparent
     }
 
 }
@@ -256,7 +258,7 @@ function fill_model_info(){
     $.MODEL_INFO.scale.z.el.value = model.scale[2]
     $.MODEL_INFO.active.el.checked = model.active
     // заполняем список моделей
-    $.MODEL_INFO.concat_animation_with_model.el.innerHTML = ''
+    $.MODEL_INFO.concat_animation_with_model.el.innerHTML = '<option value=""></option>'
     for (let model of models){
         let m = model[1]
         if (m.active){
@@ -346,7 +348,7 @@ $.MODEL_INFO.save.el.onclick=()=>{
     })
 }
 
-const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned)=>{
+const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned,transparent)=>{
     let _defuse = defuse!==''?textures.get(defuse).txt:null
     let _normals = normals!==''?textures.get(normals).txt:null
     let _rmo = rmo!==''?textures.get(rmo).txt:null
@@ -367,7 +369,8 @@ const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned)=>{
         aoMap         : _rmo,
         skinning      : skinned,
         metalness     : metalness,
-        roughness     : roughness
+        roughness     : roughness,
+        transparent   : transparent,
     })
 
     return material
@@ -389,7 +392,8 @@ $.OBJECT.apply.el.onclick=()=>{
         rmo,
         parseFloat($.OBJECT.metalness.el.value),
         parseFloat($.OBJECT.roughness.el.value),
-        selected_object.type==='SkinnedMesh'?true:false
+        selected_object.type==='SkinnedMesh'?true:false,
+        $.OBJECT.transparent.el.checked,
     )
 
     selected_object.material = material
@@ -404,6 +408,7 @@ $.OBJECT.apply.el.onclick=()=>{
         rmo: rmo,
         metalness: material.metalness,
         roughness: material.roughness,
+        transparent: material.transparent,
     })
 
 }
@@ -489,6 +494,9 @@ $.MAIN.create_bundle.el.onclick = ()=>{
 
 async function create_bundle(){
     let emptyMaterial = new THREE.MeshStandardMaterial()
+    let emptySkinnedMaterial = new THREE.MeshStandardMaterial({
+      skinning : true,  
+    })
 
     for (let a of models){
         let model = a[1]
@@ -507,7 +515,6 @@ async function create_bundle(){
     models.forEach(el=>{
         if (el.active){
             if (el.mesh && el.active){
-
                 if (el.concat_animation_name!==''){
                     if (el.data.animations.length!==0){
                         let anim = el.data.animations[0]
@@ -522,8 +529,11 @@ async function create_bundle(){
                 animations = animations.concat(el.data.animations)
                 //
                 el.mesh.traverse((node)=>{
-                    if (node.type==='SkinnedMesh' || node.type==='Mesh'){
+                    if (node.type==='Mesh'){
                         node.material = emptyMaterial
+                    }
+                    if (node.type==='SkinnedMesh'){
+                        node.material = emptySkinnedMaterial
                     }
                 })
                 //

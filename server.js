@@ -178,9 +178,8 @@ const user_message = (message)=>{
       send_json({
         c: 'list',
         list: assets
-      })
-        
-      break;
+      })        
+      break
     case 'model':{
       assets.in[a.model].active = a.active
       assets.in[a.model].position = a.position
@@ -190,19 +189,20 @@ const user_message = (message)=>{
       assets.in[a.model].concat_animation_name = a.concat_animation_name
       fs.writeFileSync(path.join(__dirname,'assets.json'),JSON.stringify(assets))
     }
-    break;
+    break
     case 'object':{
         assets.in[a.model].materials[a.object]={
-          type: a.type,
-          defuse: a.defuse,
-          normals: a.normals,
-          rmo: a.rmo,
-          metalness: a.metalness,
-          roughness: a.roughness
+          type        : a.type,
+          defuse      : a.defuse,
+          normals     : a.normals,
+          rmo         : a.rmo,
+          metalness   : a.metalness,
+          roughness   : a.roughness,
+          transparent : a.transparent,
         }
         fs.writeFileSync(path.join(__dirname,'assets.json'),JSON.stringify(assets))
       }
-      break;
+      break
     case 'bundle':{
         fs.writeFileSync(path.join(__dirname,'public','bundle.gltf'),a.gltf)
         let result = child_process.execSync('WindowsMRAssetConverter public/bundle.gltf -min-version latest -compress-meshes -o public/bundle.glb');
@@ -231,6 +231,6 @@ const user_message = (message)=>{
         fs.writeFileSync(path.join(__dirname,'public','bundle.json'),JSON.stringify(bundle))  
         console.log('finish')
       }
-      break;
+      break
   }
 }
