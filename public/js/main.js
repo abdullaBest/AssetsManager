@@ -68,7 +68,7 @@ $.LIST.models.onselect = (name)=>{
     let model = models.get(name)
     selected_model_name = name
     if (!model.mesh){
-        load_model(model.name).then((data)=>{
+        load_model(model.filename).then((data)=>{
             model.data = data
             model.mesh = data.scene.children[0]
             apply_materials(model)
@@ -241,6 +241,8 @@ $.MODEL_INFO.scale.x.el.addEventListener('change',model_info_change)
 $.MODEL_INFO.scale.y.el.addEventListener('change',model_info_change)
 $.MODEL_INFO.scale.z.el.addEventListener('change',model_info_change)
 $.MODEL_INFO.active.el.addEventListener('change',model_info_change)
+$.MODEL_INFO.name.el.addEventListener('change',model_info_change)
+$.MODEL_INFO.concat_bones_with_model.el.addEventListener('change',model_info_change)
 $.MODEL_INFO.concat_animation_with_model.el.addEventListener('change',model_info_change)
 $.MODEL_INFO.concat_animation_name.el.addEventListener('change',model_info_change)
 
@@ -258,6 +260,7 @@ function fill_model_info(){
     $.MODEL_INFO.scale.z.el.value = model.scale[2]
     $.MODEL_INFO.active.el.checked = model.active
     // заполняем список моделей
+    $.MODEL_INFO.concat_bones_with_model.el.innerHTML = '<option value=""></option>'
     $.MODEL_INFO.concat_animation_with_model.el.innerHTML = '<option value=""></option>'
     for (let model of models){
         let m = model[1]
@@ -266,8 +269,13 @@ function fill_model_info(){
             option.value = m.name
             option.innerHTML = m.name
             $.MODEL_INFO.concat_animation_with_model.el.appendChild(option)    
+            option = document.createElement('option')
+            option.value = m.name
+            option.innerHTML = m.name
+            $.MODEL_INFO.concat_bones_with_model.el.appendChild(option)    
         }          
     }
+    $.MODEL_INFO.concat_bones_with_model.el.value = model.concat_bones_with_model
     $.MODEL_INFO.concat_animation_with_model.el.value = model.concat_animation_with_model
     $.MODEL_INFO.concat_animation_name.el.value = model.concat_animation_name
 
@@ -304,19 +312,10 @@ function model_info_change(){
         model.scale[2] = value
     }
     model.active = $.MODEL_INFO.active.el.checked
+    model.name   = $.MODEL_INFO.name.el.value
+    model.concat_bones_with_model = $.MODEL_INFO.concat_bones_with_model.el.value
     model.concat_animation_with_model = $.MODEL_INFO.concat_animation_with_model.el.value
     model.concat_animation_name = $.MODEL_INFO.concat_animation_name.el.value
-    //
-    value = $.MODEL_INFO.name.el.value
-    if (value!==selected_model_name){
-        /*
-        model.name = value
-        models.set(value,model)
-        models.delete(selected_model_name)
-        $.LIST.models.remove(selected_model_name)
-        $.LIST.models.add(value)
-        */
-    }
     //
     if (model.mesh){
         model.mesh.position.x = model.position[0]
@@ -338,11 +337,13 @@ $.MODEL_INFO.save.el.onclick=()=>{
     }
     send_json({
         c:'model',
-        model: model.name,
-        active: model.active,
+        model   : selected_model_name,
+        name    : model.name,
+        active  : model.active,
         position: model.position,
-        scale: model.scale,
+        scale   : model.scale,
         rotation: model.rotation,
+        concat_bones_with_model: model.concat_bones_with_model,
         concat_animation_with_model: model.concat_animation_with_model,
         concat_animation_name: model.concat_animation_name
     })
@@ -399,16 +400,16 @@ $.OBJECT.apply.el.onclick=()=>{
     selected_object.material = material
 
     send_json({
-        c:'object',
-        model: selected_model_name,
-        object: selected_object.name,
-        type: type,
-        defuse: defuse,
-        normals: normals,
-        rmo: rmo,
-        metalness: material.metalness,
-        roughness: material.roughness,
-        transparent: material.transparent,
+        c           :'object',
+        model       : selected_model_name,
+        object      : selected_object.name,
+        type        : type,
+        defuse      : defuse,
+        normals     : normals,
+        rmo         : rmo,
+        metalness   : material.metalness,
+        roughness   : material.roughness,
+        transparent : material.transparent,
     })
 
 }
@@ -492,6 +493,71 @@ $.MAIN.create_bundle.el.onclick = ()=>{
     create_bundle()
 }
 
+function rearange_bones(model){
+    if (model.concat_bones_with_model===''){
+        return
+    }
+    let src = null
+    for (let a of models){
+        let m = a[1]
+        if (m.name===model.concat_bones_with_model){
+            src = m.mesh
+            break
+        }
+    }
+    if (src===null){
+        return
+    }
+    //
+    let mesh_src = null
+    src.traverse(node => {
+      if (node.isSkinnedMesh) {
+        mesh_src = node
+      }
+    })    
+    let mesh_dst = null
+    model.mesh.traverse(node=>{
+      if (node.isSkinnedMesh){
+        mesh_dst = node
+      }
+    })
+    if (mesh_dst===null || mesh_src===null){
+        return
+    }
+    //
+    let bones_t=[]
+    let err= false
+    for (let i=0;i<mesh_dst.skeleton.bones.length;i++){
+        let name = mesh_dst.skeleton.bones[i].name
+        let yep = false
+        for(let j=0;j<mesh_src.skeleton.bones.length;j++){
+            let name2 = mesh_src.skeleton.bones[j].name
+            if (name===name2){
+                yep = true
+                bones_t.push(j)
+                break
+            }
+        }
+        if (!yep){
+            console.log(model.name+': not founded bone',name)
+            err = true
+            bones_t.push(i)
+        }
+    }
+    let a = mesh_dst.geometry.attributes.skinIndex
+    for (let i=0;i<a.array.length;i++){
+        let n = a.array[i]
+        a.array[i] = bones_t[n]
+    }
+    mesh_dst.skeleton = mesh_src.skeleton
+    
+    if (err){
+        alert('есть ошибки смотри консоль')
+        return
+    }
+}
+
+
 async function create_bundle(){
     let emptyMaterial = new THREE.MeshStandardMaterial()
     let emptySkinnedMaterial = new THREE.MeshStandardMaterial({
@@ -501,7 +567,7 @@ async function create_bundle(){
     for (let a of models){
         let model = a[1]
         if (!model.mesh){
-            let data = await load_model(model.name)
+            let data = await load_model(model.filename)
             model.data = data
             model.mesh = data.scene.children[0]
             apply_materials(model)
@@ -514,6 +580,9 @@ async function create_bundle(){
 
     models.forEach(el=>{
         if (el.active){
+            // перенастраиваем косточки если нужно
+            rearange_bones(el)
+
             if (el.mesh && el.active){
                 if (el.concat_animation_name!==''){
                     if (el.data.animations.length!==0){
@@ -550,7 +619,7 @@ async function create_bundle(){
 
     let exporter = new THREE.GLTFExporter();
     exporter.parse( scene, function ( gltf ) {
-        console.log( gltf );
+        //console.log( gltf );
         send_json({
             c:'bundle',
             gltf: JSON.stringify(gltf)
