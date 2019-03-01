@@ -80,16 +80,17 @@ function check_in(){
       let info = assets.in[basename]
       if (info===undefined){
         info = {
-          name: basename,
-          filename: file,
-          position : [0,0,0],
-          scale: [1,1,1],
-          rotation: [0,0,0],
-          active: true,
+          name      : basename,
+          filename  : file,
+          position  : [0,0,0],
+          scale     : [1,1,1],
+          rotation  : [0,0,0],
+          active    : true,
+          concat_bones_with_model: '',
           concat_animation_with_model: '',
-          concat_animation_name:'',
-          ctime: stat.ctime.toString(),
-          materials: {}
+          concat_animation_name      : '',
+          ctime     : stat.ctime.toString(),
+          materials : {}
         }
         assets.in[basename] = info
         need_update = true
@@ -97,14 +98,14 @@ function check_in(){
       }else{
 
         if (info.ctime!==stat.ctime.toString()){
-          info.ctime = stat.ctime.toString()
+          info.ctime  = stat.ctime.toString()
           need_update = true
         }
 
       }
 
       if(need_update){
-        child_process.exec('FBX2glTF-windows-x64.exe --binary --verbose --no-flip-v --input in/'+info.filename+' --output public/models/'+info.name, function(error, stdout, stderr) {
+        child_process.exec('FBX2glTF-windows-x64.exe --binary --verbose --no-flip-v --input in/'+info.filename+' --output public/models/'+info.filename, function(error, stdout, stderr) {
           console.log(stdout);
         })
       }
@@ -123,14 +124,18 @@ function check_in(){
       let file = files[i]
       let basename = path.basename(file).split('.')[0].toLowerCase()
       let stat = fs.statSync(path.join('public','textures',file))
+      
+      if (stat.isDirectory()) {
+        continue
+      }
 
       let info = assets.t[basename]
       if (info===undefined){
         info = {
-          name: basename,
-          filename: file,
-          active: true,
-          ctime: stat.ctime.toString(),
+          name     : basename,
+          filename : file,
+          active   : true,
+          ctime    : stat.ctime.toString(),
         }
         assets.t[basename] = info
 
@@ -181,12 +186,14 @@ const user_message = (message)=>{
       })        
       break
     case 'model':{
-      assets.in[a.model].active = a.active
+      assets.in[a.model].active   = a.active
+      assets.in[a.model].name     = a.name
       assets.in[a.model].position = a.position
-      assets.in[a.model].scale = a.scale
+      assets.in[a.model].scale    = a.scale
       assets.in[a.model].rotation = a.rotation
+      assets.in[a.model].concat_bones_with_model = a.concat_bones_with_model
       assets.in[a.model].concat_animation_with_model = a.concat_animation_with_model
-      assets.in[a.model].concat_animation_name = a.concat_animation_name
+      assets.in[a.model].concat_animation_name       = a.concat_animation_name
       fs.writeFileSync(path.join(__dirname,'assets.json'),JSON.stringify(assets))
     }
     break
@@ -216,8 +223,8 @@ const user_message = (message)=>{
           let model = assets.in[name]
           if (model.active){
             bundle.models[model.name]={
-              name : model.name,
-              materials: model.materials
+              name      : model.name,
+              materials : model.materials
             }
           }
         }

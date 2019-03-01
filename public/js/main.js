@@ -493,6 +493,94 @@ $.MAIN.create_bundle.el.onclick = ()=>{
     create_bundle()
 }
 
+// настраивает анимацию одной модели для другой
+//
+function prepare_animations(model){
+    let src = null
+    for (let a of models){
+        let m = a[1]
+        if (m.name===model.concat_animation_with_model){
+            src = m.mesh
+            break
+        }
+    }
+    if (src===null){
+        return
+    }
+    //
+    let mesh_src = null
+    src.traverse(node => {
+      if (node.isSkinnedMesh && mesh_src===null) {
+        mesh_src = node
+      }
+    })    
+    let mesh_dst = null
+    model.mesh.traverse(node=>{
+      if (node.isSkinnedMesh){
+        mesh_dst = node
+      }
+    })
+
+    const EPSILON = 0.0001
+    
+    let anim = model.data.animations[0].tracks
+    
+    for (let i=0;i<mesh_src.skeleton.bones.length;i++){
+        let b1 = mesh_src.skeleton.bones[i]
+        let b2 = null
+        for (let i=0;i<mesh_dst.skeleton.bones.length;i++){
+            let b = mesh_dst.skeleton.bones[i]
+            if (b.name===b1.name){
+                b2=b
+                break
+            }
+        }
+        
+        if (b2===null){
+            continue
+        }
+        
+        let dx = Math.abs(b1.position.x-b2.position.x) 
+        let dy = Math.abs(b1.position.y-b2.position.y) 
+        let dz = Math.abs(b1.position.z-b2.position.z) 
+        if ( dx>EPSILON || dy>EPSILON || dz>EPSILON ){
+            let yep = false
+            let name = b1.name+'.position'
+            for (let j=0;j<anim.length;j++){
+                if (anim[j].name===name){
+                    yep = true
+                    break
+                }
+            }
+            if (!yep){
+                let q = new THREE.VectorKeyframeTrack(name,[0],[b2.position.x,b2.position.y,b2.position.z])
+                anim.push(q)
+            }
+        }
+        dx = Math.abs(b1.quaternion.x - b2.quaternion.x)
+        dy = Math.abs(b1.quaternion.y - b2.quaternion.y)
+        dz = Math.abs(b1.quaternion.z - b2.quaternion.z)
+        let dw = Math.abs(b1.quaternion.w - b2.quaternion.w)
+        if ( dx>EPSILON || dy>EPSILON || dz>EPSILON || dw>EPSILON ){
+            let yep = false
+            let name = b1.name+'.quaternion'
+            for (let j=0;j<anim.length;j++){
+                if (anim[j].name===name){
+                    yep = true
+                    break
+                }
+            }
+            if (!yep){
+                let q = new THREE.QuaternionKeyframeTrack(name,[0],[b2.quaternion.x,b2.quaternion.y,b2.quaternion.z,b2.quaternion.w])
+                anim.push(q)
+            }
+        }
+    }
+}
+
+// настраивает кости одной модели под другую модель
+//
+//
 function rearange_bones(model){
     if (model.concat_bones_with_model===''){
         return
@@ -511,7 +599,7 @@ function rearange_bones(model){
     //
     let mesh_src = null
     src.traverse(node => {
-      if (node.isSkinnedMesh) {
+      if (node.isSkinnedMesh && mesh_src===null) {
         mesh_src = node
       }
     })    
@@ -525,8 +613,8 @@ function rearange_bones(model){
         return
     }
     //
-    let bones_t=[]
-    let err= false
+    let bones_t = []
+    let err = false
     for (let i=0;i<mesh_dst.skeleton.bones.length;i++){
         let name = mesh_dst.skeleton.bones[i].name
         let yep = false
@@ -611,6 +699,7 @@ async function create_bundle(){
             }
         }
         if (el.concat_animation_with_model!==''){
+            prepare_animations(el)
             let anim = el.data.animations[0]
             anim.name = el.concat_animation_with_model+'.'+el.concat_animation_name
             animations.push(anim)
