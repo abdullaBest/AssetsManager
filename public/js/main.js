@@ -612,6 +612,23 @@ function rearange_bones(model){
     if (mesh_dst===null || mesh_src===null){
         return
     }
+    // перемножаем скейлы если размеры геометрии не совпадают, такое редко но бывает
+    // спасибо моделлеру с которым я работаю, новая модель новый вызов)
+    let scale_dx = mesh_dst.scale.x
+    let scale_dy = mesh_dst.scale.y
+    let scale_dz = mesh_dst.scale.z
+    let scale_sx = scale_dx/mesh_src.scale.x
+    let scale_sy = scale_dy/mesh_src.scale.y
+    let scale_sz = scale_dz/mesh_src.scale.z
+    let b = mesh_dst.geometry.attributes.position.array
+    mesh_dst.scale.x = 1.0
+    mesh_dst.scale.y = 1.0
+    mesh_dst.scale.z = 1.0
+    for (let i=0;i<b.length;i=i+3){
+        b[i+0] = b[i+0]*scale_sx
+        b[i+1] = b[i+1]*scale_sy
+        b[i+2] = b[i+2]*scale_sz
+    }
     //
     let bones_t = []
     let err = false
@@ -671,7 +688,7 @@ async function create_bundle(){
             // перенастраиваем косточки если нужно
             rearange_bones(el)
 
-            if (el.mesh && el.active){
+            if (el.mesh){
                 if (el.concat_animation_name!==''){
                     if (el.data.animations.length!==0){
                         let anim = el.data.animations[0]
@@ -718,6 +735,5 @@ async function create_bundle(){
         embedImages: false,
         animations: animations, 
     })
-    //
-    
+    //    
 }
