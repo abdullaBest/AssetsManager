@@ -104,7 +104,12 @@ $.LIST.filter_all.el.onclick = ()=>{
 
 const apply_materials = (model)=>{
     model.mesh.traverse((node)=>{
-        let info = model.materials[node.name]
+        let info
+        if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+            info = model.materials[model.name]
+        }else{
+            info = model.materials[node.name]
+        }
         if (info ){
             if (!info.material){
                 info.material = create_material(
@@ -399,10 +404,16 @@ $.OBJECT.apply.el.onclick=()=>{
 
     selected_object.material = material
 
+    let name = selected_object.name
+    let model = models.get(selected_model_name)
+    if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+        name = selected_model_name
+    }
+
     send_json({
         c           :'object',
         model       : selected_model_name,
-        object      : selected_object.name,
+        object      : name,
         type        : type,
         defuse      : defuse,
         normals     : normals,
@@ -491,6 +502,36 @@ net_prepare()
 //==============================================================================================
 $.MAIN.create_bundle.el.onclick = ()=>{
     create_bundle()
+}
+
+async function test(){
+    for (let a of models){
+        let model = a[1]
+        if (!model.mesh){
+            let data = await load_model(model.filename)
+            model.data = data
+            model.mesh = data.scene.children[0]
+            apply_materials(model)
+        }
+    }
+
+    let model_a = models.get('girl_set1_arms').mesh
+    model_a.traverse(node=>{
+        console.log(node,node.scale)
+    })
+    console.log('------------')
+    let model_b = models.get('girl_set2_arms').mesh
+    model_b.traverse(node=>{
+        console.log(node,node.scale)
+    })
+//    RENDER.scene.add(.children[4])
+//    RENDER.scene.add(models.get('girl_set2_arms').mesh.children[4])
+/*    let a = models.get('girl_set1_arms').mesh.children[4].geometry.attributes.position.array
+    let b = models.get('girl_set2_arms').mesh.children[4].geometry.attributes.position.array
+    for (let i=0;i<a.length;i++){
+        console.log(a[i]-b[i])
+    }
+*/
 }
 
 // настраивает анимацию одной модели для другой
@@ -629,6 +670,7 @@ function rearange_bones(model){
         b[i+1] = b[i+1]*scale_sy
         b[i+2] = b[i+2]*scale_sz
     }
+
     //
     let bones_t = []
     let err = false
@@ -662,6 +704,60 @@ function rearange_bones(model){
     }
 }
 
+// убираем не нужную группу для единичной меш
+function remove_group(el){
+    if (el.mesh.type!=='Object3D' || el.mesh.children.length!==1){
+        return el.mesh
+    }
+
+    let c = el.mesh.children[0]
+    c.updateMatrix()
+    //
+/*    if (el.name!==c.name){
+        el.materials[el.name] = el.materials[c.name]
+        delete el.materials[c.name]
+    }
+*/
+    //
+    let v = new THREE.Vector3( 0, 0, 0 )
+
+    let n = c.geometry.attributes.normal
+    let p = c.geometry.attributes.position
+    //let u = c.geometry.attributes.uv
+
+    for (let i=0;i<p.count;i++){
+        v.x = n.array[i*3+0]
+        v.y = n.array[i*3+1]
+        v.z = n.array[i*3+2]
+        v.applyMatrix4(c.matrix)
+
+        n.array[i*3+0] = v.x
+        n.array[i*3+1] = v.y
+        n.array[i*3+2] = v.z
+
+        v.x = p.array[i*3+0]
+        v.y = p.array[i*3+1]
+        v.z = p.array[i*3+2]
+        v.applyMatrix4(c.matrix)
+
+        p.array[i*3+0] = v.x*1
+        p.array[i*3+1] = v.y*1
+        p.array[i*3+2] = v.z*1
+    }
+    //
+    c.position.x = 0
+    c.position.y = 0
+    c.position.z = 0
+    c.scale.x = 1
+    c.scale.y = 1
+    c.scale.z = 1
+    c.rotation.x = 0
+    c.rotation.y = 0
+    c.rotation.z = 0
+    c.updateMatrix()
+
+    return c
+}
 
 async function create_bundle(){
     let emptyMaterial = new THREE.MeshStandardMaterial()
@@ -689,6 +785,9 @@ async function create_bundle(){
             rearange_bones(el)
 
             if (el.mesh){
+                //убираем группу для единичных объектов
+                let mesh = remove_group(el)
+
                 if (el.concat_animation_name!==''){
                     if (el.data.animations.length!==0){
                         let anim = el.data.animations[0]
@@ -702,7 +801,7 @@ async function create_bundle(){
                 }
                 animations = animations.concat(el.data.animations)
                 //
-                el.mesh.traverse((node)=>{
+                mesh.traverse((node)=>{
                     if (node.type==='Mesh'){
                         node.material = emptyMaterial
                     }
@@ -710,9 +809,15 @@ async function create_bundle(){
                         node.material = emptySkinnedMaterial
                     }
                 })
+                if (mesh.type==='Mesh'){
+                    mesh.material = emptyMaterial
+                }
+                if (mesh.type==='SkinnedMesh'){
+                   mesh.material = emptySkinnedMaterial
+                }
                 //
-                el.mesh.name = el.name
-                scene.add(el.mesh)
+                mesh.name = el.name
+                scene.add(mesh)
             }
         }
         if (el.concat_animation_with_model!==''){

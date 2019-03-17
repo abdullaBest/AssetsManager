@@ -191,7 +191,7 @@ const user_message = (message)=>{
       assets.in[a.model].position = a.position
       assets.in[a.model].scale    = a.scale
       assets.in[a.model].rotation = a.rotation
-      assets.in[a.model].concat_bones_with_model = a.concat_bones_with_model
+      assets.in[a.model].concat_bones_with_model     = a.concat_bones_with_model
       assets.in[a.model].concat_animation_with_model = a.concat_animation_with_model
       assets.in[a.model].concat_animation_name       = a.concat_animation_name
       fs.writeFileSync(path.join(__dirname,'assets.json'),JSON.stringify(assets))
