@@ -105,7 +105,7 @@ $.LIST.filter_all.el.onclick = ()=>{
 const apply_materials = (model)=>{
     model.mesh.traverse((node)=>{
         let info
-        if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+        if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].type!=='Group'){
             info = model.materials[model.name]
         }else{
             info = model.materials[node.name]
@@ -406,7 +406,7 @@ $.OBJECT.apply.el.onclick=()=>{
 
     let name = selected_object.name
     let model = models.get(selected_model_name)
-    if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+    if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].type!=='Group'){
         name = selected_model_name
     }
 
@@ -706,18 +706,12 @@ function rearange_bones(model){
 
 // убираем не нужную группу для единичной меш
 function remove_group(el){
-    if (el.mesh.type!=='Object3D' || el.mesh.children.length!==1){
+    if (el.mesh.type!=='Object3D' || el.mesh.children.length!==1 || el.mesh.children[0].type==='Group'){
         return el.mesh
     }
 
     let c = el.mesh.children[0]
     c.updateMatrix()
-    //
-/*    if (el.name!==c.name){
-        el.materials[el.name] = el.materials[c.name]
-        delete el.materials[c.name]
-    }
-*/
     //
     let v = new THREE.Vector3( 0, 0, 0 )
 
