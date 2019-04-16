@@ -105,7 +105,7 @@ $.LIST.filter_all.el.onclick = ()=>{
 const apply_materials = (model)=>{
     model.mesh.traverse((node)=>{
         let info
-        if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].type!=='Group'){
+        if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
             info = model.materials[model.name]
         }else{
             info = model.materials[node.name]
@@ -121,6 +121,7 @@ const apply_materials = (model)=>{
                     parseFloat(info.roughness),
                     node.type==='SkinnedMesh'?true:false,
                     info.transparent,
+                    info.dside,
                 )
             }
             node.material = info.material
@@ -234,6 +235,7 @@ const select_mesh = (e)=>{
         $.OBJECT.metalness.el.value = selected_object.material.metalness
         $.OBJECT.roughness.el.value = selected_object.material.roughness
         $.OBJECT.transparent.el.checked = selected_object.material.transparent
+        $.OBJECT.dside.el.checked = selected_object.material.side===THREE.DoubleSide
     }
 
 }
@@ -354,7 +356,7 @@ $.MODEL_INFO.save.el.onclick=()=>{
     })
 }
 
-const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned,transparent)=>{
+const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned,transparent,dside)=>{
     let _defuse = defuse!==''?textures.get(defuse).txt:null
     let _normals = normals!==''?textures.get(normals).txt:null
     let _rmo = rmo!==''?textures.get(rmo).txt:null
@@ -377,6 +379,7 @@ const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned,tra
         metalness     : metalness,
         roughness     : roughness,
         transparent   : transparent,
+        side          : dside?THREE.DoubleSide:THREE.FrontSide
     })
 
     return material
@@ -400,13 +403,14 @@ $.OBJECT.apply.el.onclick=()=>{
         parseFloat($.OBJECT.roughness.el.value),
         selected_object.type==='SkinnedMesh'?true:false,
         $.OBJECT.transparent.el.checked,
+        $.OBJECT.dside.el.checked,
     )
 
     selected_object.material = material
 
     let name = selected_object.name
     let model = models.get(selected_model_name)
-    if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].type!=='Group'){
+    if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
         name = selected_model_name
     }
 
@@ -421,6 +425,7 @@ $.OBJECT.apply.el.onclick=()=>{
         metalness   : material.metalness,
         roughness   : material.roughness,
         transparent : material.transparent,
+        dside       : material.side===THREE.DoubleSide,
     })
 
 }
@@ -706,12 +711,16 @@ function rearange_bones(model){
 
 // убираем не нужную группу для единичной меш
 function remove_group(el){
-    if (el.mesh.type!=='Object3D' || el.mesh.children.length!==1 || el.mesh.children[0].type==='Group'){
+    if (el.mesh.type!=='Object3D' || el.mesh.children.length!==1){
         return el.mesh
     }
 
     let c = el.mesh.children[0]
+    if (c.type!=='Object3D' || c.children.length!==0){
+        return el.mesh
+    }
     c.updateMatrix()
+
     //
     let v = new THREE.Vector3( 0, 0, 0 )
 
@@ -734,9 +743,9 @@ function remove_group(el){
         v.z = p.array[i*3+2]
         v.applyMatrix4(c.matrix)
 
-        p.array[i*3+0] = v.x*1
-        p.array[i*3+1] = v.y*1
-        p.array[i*3+2] = v.z*1
+        p.array[i*3+0] = v.x
+        p.array[i*3+1] = v.y
+        p.array[i*3+2] = v.z
     }
     //
     c.position.x = 0

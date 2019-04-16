@@ -206,6 +206,7 @@ const user_message = (message)=>{
           metalness   : a.metalness,
           roughness   : a.roughness,
           transparent : a.transparent,
+          dside       : a.dside,
         }
         fs.writeFileSync(path.join(__dirname,'assets.json'),JSON.stringify(assets))
       }
