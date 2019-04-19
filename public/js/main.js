@@ -105,7 +105,7 @@ $.LIST.filter_all.el.onclick = ()=>{
 const apply_materials = (model)=>{
     model.mesh.traverse((node)=>{
         let info
-        if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+        if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].children.length===0){
             info = model.materials[model.name]
         }else{
             info = model.materials[node.name]
@@ -369,7 +369,6 @@ const create_material = (type,defuse,normals,rmo,metalness,roughness,skinned,tra
     'MeshStandardMaterial'
 */
     let material = new THREE[type]({
-       	//side          : THREE.DoubleSide,
         map           : _defuse,
         normalMap     : _normals,
         metalnessMap  : _rmo,
@@ -410,7 +409,7 @@ $.OBJECT.apply.el.onclick=()=>{
 
     let name = selected_object.name
     let model = models.get(selected_model_name)
-    if (model.mesh.type==='Object3D' && model.mesh.children.length===1){
+    if (model.mesh.type==='Object3D' && model.mesh.children.length===1 && model.mesh.children[0].children.length===0){
         name = selected_model_name
     }
 
